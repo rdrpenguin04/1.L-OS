@@ -1,0 +1,34 @@
+; Main file for the 1.L Operating System.
+; by Rdrpenguin
+
+LDA #$1000
+TAS					; Stack pointer. Grows down.
+
+LDA #$8000
+TAX
+LDA #$0
+memclear_loop:		; Clear memory from $0000 to $8000, being careful to not clear mutable opcode range in case it was set by something else
+STA $0000,X
+DEX
+DEX					; We're storing a 16-bit value because we can.
+BCC memclear_loop	; Unless we underflowed, keep looping.
+
+					; Done clearing memory, now, to load in the rest of the OS.
+					; We only have memory-mapped access to 256 bytes of RAM, so let's copy the rest into RAM through the cartridge.
+LDA #$0100			; Skip the first 256 bytes, those are memory mapped. We already have them.
+TAX
+cartload_loop:
+CARTLDA $0000,X		; CARTLDA abs16,X = $C5
+STA $0000,X			; Store what we loaded into RAM.
+INX					; Increment because we are going up this time.
+INX
+TXA
+SUB #$8000			; What's this??? Oh yeah, I forgot to make a CMP instruction. Well, this works.
+BCC cartload_loop	; Unless we overflowed, keep looping.
+
+JMP $0100			; And, jump to main!
+					; Wow. I did all of that in 38 bytes. Better put some other routines in.
+
+.include 218rt.lasm	; Or, I could just include something to be done later. :)
+
+					; And, done! 256 bytes of initialization and whatever else we choose to put here!
